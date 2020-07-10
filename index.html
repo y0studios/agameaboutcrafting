@@ -1,0 +1,451 @@
+<html>
+<head>
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js'></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
+	<script src="rotate.js"></script>
+	<script>
+		lastmode="menu"
+		menu=3000
+		dots = 0
+		setInterval(function () {
+			dots++
+			if (dots == 5) dots = 1
+			if (dots == 1) $("#wait").text("Waiting for opponent.")
+			if (dots == 2) $("#wait").text("Waiting for opponent..")
+			if (dots == 3) $("#wait").text("Waiting for opponent...")
+		}, 1000)
+		var ingame = true;
+		var socket = io.connect("localhost:3000", {
+			transports: ['websocket']
+		});
+		window.onbeforeunload = function () {
+			socket.emit("quit", {});
+		}
+		function updatelog(log, id) {
+			$(id).prepend("<br/>")
+			for (var i = 0; i < log.length; i++) {
+				console.log(log[i])
+				if (log[i] == "<br>") break;
+				if (log[i] != "<br>") $(id).prepend($(`<img src=items/${log[i]}.png>`))
+			}
+		}
+		socket.emit("join", {});
+		socket.on('heartbeat', function (data) {
+			d = data
+			lupdate=false
+			leupdate=false
+			for (var i = 0; i < data.games.length; i++)for (var j = 0; j < data.games[i].players.length; j++)if (data.games[i].players[j].id == socket.id) {
+				for (var k = 0; k < 3; k++) {
+					$("#b" + k).first()[0].src = "items/" + data.games[i].players[j].biomes[k] + ".png"
+					$("#be" + k).first()[0].src = "items/" + data.games[i].players[1 - j].biomes[k] + ".png"
+				}
+				for (var k = 0; k < 36; k++) {
+					if (!$("#" + k).first()[0].src.endsWith("items/" + data.games[i].players[j].board[k].id + ".png")) {
+						$("#" + k).first()[0].src = "items/" + data.games[i].players[j].board[k].id + ".png"
+						if(!lupdate){
+							lupdate=true
+							updatelog(data.games[i].players[j].log, "#l")
+						}
+						if (k < 6) {
+							if (data.games[i].players[j].board[k].id == "damage") $("#" + k).parent().css("display", "none")
+							if (data.games[i].players[j].board[k].id != "damage") $("#" + k).parent().css("display", "table-cell")
+						} else {
+							if (data.games[i].players[j].board[k].id == "damage") $("#" + k).parent().css("visibility", "hidden")
+							if (data.games[i].players[j].board[k].id != "damage") $("#" + k).parent().css("visibility", "visible")
+						}
+					}
+					if (!$("#e" + k).first()[0].src.endsWith(data.games[i].players[1 - j].board[k].id + ".png")) {
+						$("#e" + k).first()[0].src = "items/" + data.games[i].players[1 - j].board[k].id + ".png"
+						if(!leupdate){
+							leupdate=true
+							updatelog(data.games[i].players[1-j].log, "#le")
+						}
+						if (k < 6) {
+							if (data.games[i].players[1 - j].board[k].id == "damage") $("#e" + k).parent().css("display", "none")
+							if (data.games[i].players[1 - j].board[k].id != "damage") $("#e" + k).parent().css("display", "table-cell")
+						} else {
+							if (data.games[i].players[1 - j].board[k].id == "damage") $("#e" + k).parent().css("visibility", "hidden")
+							if (data.games[i].players[1 - j].board[k].id != "damage") $("#e" + k).parent().css("visibility", "visible")
+						}
+					}
+					$("#" + k).rotate(-(data.games[i].players[j].board[k].cooldown) / 3)
+					$("#e" + k).rotate(-(data.games[i].players[1 - j].board[k].cooldown) / 3)
+				}
+				if (!ingame) {
+					$(".enemy").show()
+					$("#wait").hide()
+					$("#biomes").show()
+					$("#board").css("margin-left", "12vw")
+					$("#board").addClass("w3-display-left")
+					$("#board").removeClass("w3-display-middle")
+					ingame = true
+				}
+			}
+			
+			for (var i = 0; i < data.solo.length; i++)if (data.solo[i].id == socket.id) {
+				if(data.solo[i].queued)$("#wait").show()
+				if(!data.solo[i].queued)$("#wait").hide()
+				if(data.solo[i].mode=="menu"){
+					menu++
+					if(menu<300){
+						if(lastmode=="sprint")$("#emain").text(0)
+						return;	
+					}
+					$("#einfo").hide()
+					$("#board").removeClass("w3-display-left")
+					$("#board").addClass("w3-display-middle")
+					$("#board").css("margin-left", "0vw")
+				}
+				if(data.solo[i].mode!="menu"){
+					menu=0
+					$("#einfo").show()
+					var main=data.solo[i].damage
+					var sub=""
+					lastmode=data.solo[i].mode
+					if(data.solo[i].mode=="sprint")sub=data.solo[i].time/100
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>500)sub="Attack in 3..."
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>600)sub="Attack in 2..."
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>700)sub="Attack in 1..."
+					$("#emain").text(main)
+					$("#esub").text(sub)
+					$("#board").removeClass("w3-display-middle")
+					$("#board").addClass("w3-display-left")
+					$("#board").css("margin-left", "12vw")
+				}
+				for (var k = 0; k < 36; k++) {
+					if (!$("#" + k).first()[0].src.endsWith("items/" + data.solo[i].board[k].id + ".png")) {
+						$("#" + k).first()[0].src = "items/" + data.solo[i].board[k].id + ".png"
+						if(!lupdate){
+							lupdate=true
+							updatelog(data.solo[i].log, "#l")
+						}
+						if (k < 6) {
+							if (data.solo[i].board[k].id == "damage") $("#" + k).parent().css("display", "none")
+							if (data.solo[i].board[k].id != "damage") $("#" + k).parent().css("display", "table-cell")
+						} else {
+							if (data.solo[i].board[k].id == "damage") $("#" + k).parent().css("visibility", "hidden")
+							if (data.solo[i].board[k].id != "damage") $("#" + k).parent().css("visibility", "visible")
+						}
+					}
+					$("#" + k).rotate(-(data.solo[i].board[k].cooldown) / 3)
+				}
+				if (ingame) {
+					$(".enemy").hide()
+					$("#biomes").hide()
+					
+					$("#board").css("margin-left", "0")
+					$("#board").removeClass("w3-display-left")
+					$("#board").addClass("w3-display-middle")
+					ingame = false
+				}
+			}
+		})
+
+		function allowDrop(ev) {
+			ev.preventDefault();
+		}
+
+		function drag(ev) {
+			ev.dataTransfer.setData("text", ev.target.id);
+		}
+
+		function drop(ev) {
+			ev.preventDefault();
+			var data = ev.dataTransfer.getData("text")
+			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id)))socket.emit("act", { a: data, b: ev.target.id })}
+	</script>
+	<style>
+		@font-face {
+		  font-family:8bit;
+		  src: url(./8bit.ttf);
+		} 
+		th {
+			background: rgb(32, 32, 32)
+		}
+
+		.log {
+			overflow-y: hidden;
+			vertical-align: top;
+			margin: 0;
+			width: 12vw;
+			min-height: 95%;
+			height: 95%;
+			max-height: 95%;
+		}
+
+		.log>img {
+			width: 1.8vw;
+			height: 1.8vw;
+
+		}
+
+		h1 {
+			color: white
+		}
+
+		* {
+			font-family:8bit;
+			image-rendering: pixelated;
+			-moz-user-select: -moz-none;
+			-khtml-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+	</style>
+</head>
+
+<body style="background:rgb(0,0,0)">
+	<table border="2" class="w3-display-topleft" style="height:100%;position: fixed">
+		<tr>
+			<th id="l" class=log></th>
+		</tr>
+	</table>
+
+
+	<table border="2" class=w3-display-left style="margin-left:12vw" id="board">
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="0" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="1" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="2" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="3" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="4" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="5" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="6" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="7" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="8" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="9" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="10" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="11" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="12" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="13" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="14" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="15" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="16" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="17" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="18" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="19" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="20" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="21" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="22" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="23" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="24" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="25" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="26" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="27" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="28" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="29" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="30" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="31" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="32" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="33" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="34" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" id="35" ondrop="drop(event)"
+					ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)"
+					src="items/empty.png"></img></th>
+		</tr>
+	</table>
+	<div id="biomes">
+		<img id="b0" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% - 9.5vw);right:calc(50% + 3vw);position:absolute"
+			src="items/forest.png"></img>
+		<img id="b1" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% + 0.5vw);right:calc(50% + 3vw);position:absolute"
+			src="items/forest.png"></img>
+		<img id="b2" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% + 10.5vw);right:calc(50% + 3vw);position:absolute"
+			src="items/forest.png"></img>
+		<img id="be0" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% - 9.5vw);right:calc(42.5% - 1vw);position:absolute"
+			src="items/forest.png"></img>
+		<img id="be1" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% + 0.5vw);right:calc(42.5% - 1vw);position:absolute"
+			src="items/forest.png"></img>
+		<img id="be2" draggable="false"
+			style="opacity: 0.5;width:4vw;height:4vw;top:calc(50% + 10.5vw);right:calc(42.5% - 1vw);position:absolute"
+			src="items/forest.png"></img>
+	</div>
+	<table border="2" class="log w3-display-right enemy" style="height:100%;position: fixed">
+		<tr>
+			<th id="le" class=log></th>
+		</tr>
+	</table>
+	<table id="einfo" border="2" draggable="false" ondrop="drop(event)" ondragover="allowDrop(event)" class="w3-display-right" ondrop="drop(event)" ondragover="allowDrop(event)"
+		style="margin-right:12vw;width:30vw;height:30vw">
+		<tr><th><h1 draggable="false" id="emain" ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:20em">${main}</h1><h1 draggable="false" id="esub"
+					ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:5em">${sub}</h1></tr></th>
+	</table>
+	<table border="2" class="w3-display-right enemy" ondrop="drop(event)" ondragover="allowDrop(event)"
+		style="margin-right:12vw;width:30vw;height:30vw">
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e0"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e1"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e2"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e3"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e4"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e5"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e6"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e7"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e8"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e9"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e10"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e11"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e12"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e13"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e14"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e15"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e16"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e17"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e18"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e19"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e20"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e21"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e22"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e23"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e24"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e25"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e26"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e27"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e28"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e29"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		</tr>
+		<tr>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e30"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e31"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e32"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e33"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e34"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+			<th style="width:5vw;height:5vw"><img style="width:100%;height:100%" draggable="false" id="e35"
+					ondrop="drop(event)" ondragover="allowDrop(event)" src="items/empty.png"></img></th>
+		</tr>
+	</table>
+	<h1 id="wait" class="w3-display-bottommiddle w3-jumbo" style="margin-bottom:10vh">Waiting for opponent...</h1>
+	<script>
+	$("#wait").hide()
+	$("#einfo").hide()</script>
+</body>
+
+</html>
