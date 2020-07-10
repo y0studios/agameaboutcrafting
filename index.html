@@ -16,7 +16,7 @@
 			if (dots == 3) $("#wait").text("Waiting for opponent...")
 		}, 1000)
 		var ingame = true;
-		var socket = io.connect("agac.heroku.com", {
+		var socket = io.connect("agac.herokuapp.com", {
 			transports: ['websocket']
 		});
 		window.onbeforeunload = function () {
