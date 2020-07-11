@@ -23,9 +23,10 @@
 			socket.emit("quit", {});
 		}
 		function updatelog(log, id) {
+			if(log.length==0)return
 			$(id).prepend("<br/>")
 			for (var i = 0; i < log.length; i++) {
-				console.log(log[i])
+
 				if (log[i] == "<br>") break;
 				if (log[i] != "<br>") $(id).prepend($(`<img src=items/${log[i]}.png>`))
 			}
@@ -74,6 +75,7 @@
 				}
 				if (!ingame) {
 					$(".enemy").show()
+					$("#einfo").hide()
 					$("#wait").hide()
 					$("#biomes").show()
 					$("#board").css("margin-left", "12vw")
@@ -107,6 +109,8 @@
 					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>500)sub="Attack in 3..."
 					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>600)sub="Attack in 2..."
 					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>700)sub="Attack in 1..."
+					if(data.solo[i].mode=="tutorial")main=""
+					if(data.solo[i].mode=="tutorial")sub=data.solo[i].msg
 					$("#emain").text(main)
 					$("#esub").text(sub)
 					$("#board").removeClass("w3-display-middle")
@@ -196,7 +200,7 @@
 	</style>
 </head>
 
-<body style="background:rgb(0,0,0)">
+<body id="ebody" style="background:rgb(0,0,0)">
 	<table border="2" class="w3-display-topleft" style="height:100%;position: fixed">
 		<tr>
 			<th id="l" class=log></th>
