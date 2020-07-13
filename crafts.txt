@@ -1,0 +1,66 @@
+=-= WEAPON LIST =-=
+
+sharprock = 1 damage / 5 seconds
+stoneaxe = 2 damage / 5 seconds
+stonespear = 4 damage / 10 seconds
+sharpiron = 3 damage / 5 seconds
+ironaxe = 6 damage / 5 seconds
+ironspear = 12 damage / 10 seconds
+sharpiron = 3 damage / 5 seconds
+ironaxe = 6 damage / 5 seconds
+ironspear = 12 damage / 10 seconds
+bowstonearrow = 16 damage / convert to bow
+bowironarrow = 30 damage / convert to bow
+
+=-= RECIPE LIST =-=
+
+* = not consumed
+
+*player + *forest = twig
+stoneaxe + *forest = wood
+*ironaxe + *forest = wood
+*player + *cave = rock
+stonepick + *cave = ironingot
+*ironpick + *cave = ironingot
+rock + rock = sharprock
+ironingot + ironingot = sharpiron
+twig + twig = stick
+twig + sharprock = stoneaxe
+stick + sharprock = stonespear
+sharprock + sharprock = stonepickhead
+stonepickhead + stick = stonepick
+twig + sharpiron = ironaxe
+stick + sharpiron = ironspear
+sharpiron + sharpiron = ironpickhead
+ironpickhead + stick = ironpick
+wood + wood = boat
+*ocean + boat = random biome
+rock + ironingot = sharpeningkit
+sharpeningkit + stoneaxe = ironaxe (reset cooldown)
+sharpeningkit + stonespear = ironspear (reset cooldown)
+sharpeningkit + ironaxe = ironaxe (reset cooldown)
+sharpeningkit + ironspear = ironspear (reset cooldown)
+wood + ironingot = ironshield
+wood + rock = stoneshield
+*player + *ironshield = 1 healing
+*player + stoneshield = 6 healing
+*player + *plains = berry
+*player + *desert = cactusfruit + 4 damage
+stoneaxe + *desert = cactusfruit + 2 damage
+*ironaxe + *desert = cactusfruit + 2 damage
+stick + stick = unlitfire
+unlitfire + wood = litfire
+litfire + cactusfruit = unlitfire = cookedcactusfruit
+litfire + berry = unlitfire = cookedberry
+*player + berry = 3 healing
+*player + cookedberry = 15 healing
+*player + cactusfruit = 6 healing
+*player + cookedcactusfruit = 30 healing
+*plains + stoneaxe = grass
+*plains + *ironaxe = grass
+grass + grass = string
+stick + string = bow
+string + stonespear = stonearrow
+string + ironspear = ironarrow
+stonearrow + bow = bowstonearrow
+ironarrow + bow = bowironarrow
