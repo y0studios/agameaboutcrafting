@@ -10,7 +10,7 @@ sharpiron = 3 damage / 5 seconds
 ironaxe = 6 damage / 5 seconds
 ironspear = 12 damage / 10 seconds
 bowstonearrow = 16 damage / convert to bow
-bowironarrow = 30 damage / convert to bow
+bowironarrow = 24 damage / convert to bow
 
 =-= RECIPE LIST =-=
 
