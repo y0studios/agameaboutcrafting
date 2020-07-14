@@ -7,7 +7,7 @@
 	<script src="rotate.js"></script>
 	<script>
 		lastmode="menu"
-		menu=3000
+		menu=500
 		dots = 0
 		setInterval(function () {
 			dots++
@@ -91,7 +91,7 @@
 				if(!data.solo[i].queued)$("#wait").hide()
 				if(data.solo[i].mode=="menu"){
 					menu++
-					if(menu<300){
+					if(menu<500){
 						if(lastmode=="sprint")$("#emain").text(0)
 						return;	
 					}
