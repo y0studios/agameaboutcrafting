@@ -161,7 +161,7 @@
 			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id))){
 			socket.emit("act", { a: data, b: ev.target.id })}
 			if(ev.target.src.endsWith("cursor.png")||$("#"+data)[0].src.endsWith("cursor.png")){
-				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.com/new");
+				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.gg/wYj6Nf4");
 				if(ev.target.src.endsWith("changelog.png")||$("#"+data)[0].src.endsWith("changelog.png"))window.open("https://ynoughtstudios.github.io/agameaboutcrafting/crafts.txt");
 			}
 		}
