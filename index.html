@@ -1,5 +1,6 @@
 <html>
 <head>
+	<title>a game about crafting</title>
 	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js'></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
@@ -157,13 +158,16 @@
 		function drop(ev) {
 			ev.preventDefault();
 			var data = ev.dataTransfer.getData("text")
-			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id)))socket.emit("act", { a: data, b: ev.target.id })}
+			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id))){
+			socket.emit("act", { a: data, b: ev.target.id })}
+			if(ev.target.src.endsWith("cursor.png")||$("#"+data)[0].src.endsWith("cursor.png")){
+				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.com/new");
+				if(ev.target.src.endsWith("changelog.png")||$("#"+data)[0].src.endsWith("changelog.png"))window.open("https://ynoughtstudios.github.io/agameaboutcrafting/crafts.txt");
+			}
+		}
 	</script>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 	<style>
-		@font-face {
-		  font-family:8bit;
-		  src: url(./8bit.ttf);
-		} 
 		th {
 			background: rgb(32, 32, 32)
 		}
@@ -189,7 +193,7 @@
 		}
 
 		* {
-			font-family:8bit;
+			font-family: 'Press Start 2P', cursive;
 			image-rendering: pixelated;
 			-moz-user-select: -moz-none;
 			-khtml-user-select: none;
