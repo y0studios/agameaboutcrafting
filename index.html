@@ -1,6 +1,8 @@
 <html>
 <head>
 	<title>a game about crafting</title>
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="/favicon.ico" type="image/x-icon">
 	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js'></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
@@ -95,6 +97,8 @@
 						if(lastmode=="sprint")$("#emain").text(0)
 						return;	
 					}
+					if(menu==500)$("#l").empty()
+					if(menu==500)$("#le").empty()					
 					$("#einfo").hide()
 					$("#board").removeClass("w3-display-left")
 					$("#board").addClass("w3-display-middle")
@@ -161,7 +165,7 @@
 			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id))){
 			socket.emit("act", { a: data, b: ev.target.id })}
 			if(ev.target.src.endsWith("cursor.png")||$("#"+data)[0].src.endsWith("cursor.png")){
-				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.gg/wYj6Nf4");
+				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.com/new");
 				if(ev.target.src.endsWith("changelog.png")||$("#"+data)[0].src.endsWith("changelog.png"))window.open("https://ynoughtstudios.github.io/agameaboutcrafting/crafts.txt");
 			}
 		}
