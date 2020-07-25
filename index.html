@@ -19,7 +19,7 @@
 			if (dots == 3) $("#wait").text("Waiting for opponent...")
 		}, 1000)
 		var ingame = true;
-		var socket = io.connect("agac.herokuapp.com", {
+		var socket = io.connect("localhost:3000", {
 			transports: ['websocket']
 		});
 		window.onbeforeunload = function () {
@@ -27,11 +27,14 @@
 		}
 		function updatelog(log, id) {
 			if(log.length==0)return
-			$(id).prepend("<br/>")
+			var small=false
+			$(id).prepend($("<br/>"))
 			for (var i = 0; i < log.length; i++) {
 
-				if (log[i] == "<br>") break;
-				if (log[i] != "<br>") $(id).prepend($(`<img src=items/${log[i]}.png>`))
+				if (log[i] == "<br>") $(id).prepend($("<br/>"))
+				if (log[i] == "<small>")small=!small
+				if (log[i] != "<br>"&&log[i] != "<small>"&&!small) $(id).prepend($(`<img src=items/${log[i]}.png>`))
+				if (log[i] != "<br>"&&log[i] != "<small>"&&small) $(id).prepend($(`<img style='width:3vw;height:3vw' src=items/${log[i]}.png>`))
 			}
 		}
 		socket.emit("join", {});
@@ -44,6 +47,7 @@
 					$("#b" + k).first()[0].src = "items/" + data.games[i].players[j].biomes[k] + ".png"
 					$("#be" + k).first()[0].src = "items/" + data.games[i].players[1 - j].biomes[k] + ".png"
 				}
+
 				for (var k = 0; k < 36; k++) {
 					if (!$("#" + k).first()[0].src.endsWith("items/" + data.games[i].players[j].board[k].id + ".png")) {
 						$("#" + k).first()[0].src = "items/" + data.games[i].players[j].board[k].id + ".png"
@@ -91,11 +95,18 @@
 			for (var i = 0; i < data.solo.length; i++)if (data.solo[i].id == socket.id) {
 				if(data.solo[i].queued)$("#wait").show()
 				if(!data.solo[i].queued)$("#wait").hide()
-				if(data.solo[i].mode=="menu"){
+				if(data.solo[i].mode=="menu"||data.solo[i].mode=="recipes"){
 					menu++
 					if(menu<500){
 						if(lastmode=="sprint")$("#emain").text(0)
+						if(lastmode=="sprint"&&localStorage.getItem('bestsprint')<lastsub)localStorage.setItem('bestsprint',lastsub)
+	
 						return;	
+					}
+					if(data.solo[i].mode=="recipes"&&data.solo[i].log.length>0){
+						$("#r").empty()
+						updatelog(data.solo[i].log, "#r")
+						document.getElementById('recipe').style.display='block'
 					}
 					if(menu==500)$("#l").empty()
 					if(menu==500)$("#le").empty()					
@@ -104,20 +115,31 @@
 					$("#board").addClass("w3-display-middle")
 					$("#board").css("margin-left", "0vw")
 				}
-				if(data.solo[i].mode!="menu"){
+				if(data.solo[i].mode!="menu"&&data.solo[i].mode!="recipes"){
 					menu=0
 					$("#einfo").show()
 					var main=data.solo[i].damage
 					var sub=""
+					var best=localStorage.getItem('best'+data.solo[i].mode);
+					if(!best)localStorage.setItem('best'+data.solo[i].mode,0)
+					if(!best)best=0
 					lastmode=data.solo[i].mode
-					if(data.solo[i].mode=="sprint")sub=data.solo[i].time/100
-					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>500)sub="Attack in 3..."
-					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>600)sub="Attack in 2..."
-					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>700)sub="Attack in 1..."
+					lastsub=sub
+					
+					if(data.solo[i].mode=="sprint")sub=data.solo[i].time/100+""
+					if(data.solo[i].mode=="sprint"&&!(sub.match(/\./)))sub+="."
+					if(data.solo[i].mode=="sprint")while(!(sub.match(/\.\d\d/)))sub+="0"
+					if(data.solo[i].mode=="arcade")sub="Score:"+data.solo[i].score
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800<500)$("#einfo").css("background","rgb(32, 32, 32)")
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>500)$("#einfo").css("background","yellow")
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>600)$("#einfo").css("background","orange")
+					if(data.solo[i].mode=="arcade"&&data.solo[i].time%800>700)$("#einfo").css("background","red")
+					if(data.solo[i].mode=="arcade"&&best<data.solo[i].score)localStorage.setItem('bestarcade',data.solo[i].score)
 					if(data.solo[i].mode=="tutorial")main=""
 					if(data.solo[i].mode=="tutorial")sub=data.solo[i].msg
 					$("#emain").text(main)
 					$("#esub").text(sub)
+					$("#ebest").text("Best:"+best)
 					$("#board").removeClass("w3-display-middle")
 					$("#board").addClass("w3-display-left")
 					$("#board").css("margin-left", "12vw")
@@ -160,14 +182,16 @@
 		}
 
 		function drop(ev) {
-			ev.preventDefault();
-			var data = ev.dataTransfer.getData("text")
-			if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id))){
-			socket.emit("act", { a: data, b: ev.target.id })}
-			if(ev.target.src.endsWith("cursor.png")||$("#"+data)[0].src.endsWith("cursor.png")){
-				if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.com/new");
-				if(ev.target.src.endsWith("changelog.png")||$("#"+data)[0].src.endsWith("changelog.png"))window.open("https://ynoughtstudios.github.io/agameaboutcrafting/crafts.txt");
-			}
+			try{
+				ev.preventDefault();
+				var data = ev.dataTransfer.getData("text")
+				if((data[0]=="e"||!isNaN(data))&&(ev.target.id[0]=="e"||!isNaN(ev.target.id))){
+				socket.emit("act", { a: data, b: ev.target.id })}
+				if(ev.target.src.endsWith("cursor.png")||$("#"+data)[0].src.endsWith("cursor.png")){
+					if(ev.target.src.endsWith("discord.png")||$("#"+data)[0].src.endsWith("discord.png"))window.open("https://discord.com/new");
+					if(ev.target.src.endsWith("changelog.png")||$("#"+data)[0].src.endsWith("changelog.png"))window.open("https://ynoughtstudios.github.io/agameaboutcrafting/crafts.txt");
+				}
+			}catch{}
 		}
 	</script>
 	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -191,13 +215,21 @@
 			height: 1.8vw;
 
 		}
+		#r>img {
+			width: 6vw;
+			height: 6vw;
 
-		h1 {
-			color: white
 		}
-
-		* {
+		
+		#close{
+		margin:1vw
+		}
+		h1 {
+			color: white;
 			font-family: 'Press Start 2P', cursive;
+		}
+		* {
+			
 			image-rendering: pixelated;
 			-moz-user-select: -moz-none;
 			-khtml-user-select: none;
@@ -214,7 +246,14 @@
 			<th id="l" class=log></th>
 		</tr>
 	</table>
-
+	<div id="recipe" class="w3-modal">
+		<table class="w3-modal-content">
+			<tr><th><span id="close" onclick="document.getElementById('recipe').style.display='none'" class="w3-jumbo w3-button w3-display-topright">&times;</span>
+			<div id="r">
+			</div>
+			<tr></th>
+		</table>
+	</div>
 
 	<table border="2" class=w3-display-left style="margin-left:12vw" id="board">
 		<tr>
@@ -365,8 +404,11 @@
 	</table>
 	<table id="einfo" border="2" draggable="false" ondrop="drop(event)" ondragover="allowDrop(event)" class="w3-display-right" ondrop="drop(event)" ondragover="allowDrop(event)"
 		style="margin-right:12vw;width:30vw;height:30vw">
-		<tr><th><h1 draggable="false" id="emain" ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:20em">${main}</h1><h1 draggable="false" id="esub"
-					ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:5em">${sub}</h1></tr></th>
+		<tr><th>
+		<h1 draggable="false" id="ebest" ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:2vw">${best}</h1>
+		<h1 draggable="false" id="emain" ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:5vw">${main}</h1>
+		<h1 draggable="false" id="esub" ondrop="drop(event)" ondragover="allowDrop(event)" style="text-align:center;font-size:2vw">${sub}</h1>
+		</tr></th>
 	</table>
 	<table border="2" class="w3-display-right enemy" ondrop="drop(event)" ondragover="allowDrop(event)"
 		style="margin-right:12vw;width:30vw;height:30vw">
